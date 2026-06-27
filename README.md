@@ -179,4 +179,5 @@
   ```
 
 | 오류 발생 상태 (행렬 축 뒤틀림) | 정상 출력 상태 (연산 교정 완료) |
-        | ![Before](before.png) | ![After](after.png) |
+| :---: | :---: |
+| ![Before](before.png) | ![After](after.png) |
