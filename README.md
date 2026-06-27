@@ -10,7 +10,7 @@
 ###  Task 1 - RGB / LiDAR Data Fusion
 - **상세 리포트:** [과제 1 보고서 바로가기](./Task%201%20-%20RGB%20-%20LiDAR%20Data%20Fusion/README.md)
 
-###  [과제 2] 다음 과제 제목 적기
+###  Task 2 - LiDAR range image generation
 - **주요 내용:** 과제 진행 후 핵심 요약 한 줄 작성.
 
 ###  [과제 3] 다음 과제 제목 적기
