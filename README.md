@@ -11,7 +11,7 @@
 - **상세 리포트:** [과제 1 보고서 바로가기](./Task%201%20-%20RGB%20-%20LiDAR%20Data%20Fusion/README.md)
 
 ###  Task 2 - LiDAR range image generation
-- **상세 리포트:** [과제 2 보고서 바로가기] 
+- **상세 리포트:** [과제 2 보고서 바로가기](./Task%202%20-%20LiDAR%20range%20image%20generation/README.md)
 
-###  [과제 3] 다음 과제 제목 적기
-- **상세 리포트:** [과제 3 보고서 바로가기] 
+###  Task 3 - Image Stitching
+- **상세 리포트:** [과제 3 보고서 바로가기](./Task%203%20-%20Image%20Stitching/README.md)
