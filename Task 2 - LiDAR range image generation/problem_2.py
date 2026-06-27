@@ -74,13 +74,25 @@ if __name__ == "__main__":
     # generate range image
     range_img = pointcloud_to_range_img(lidar_points, fov_up, fov_down, proj_H, proj_W, max_range=150)
     
+   # 1. 데이터가 없는 부분(-1)을 제외하고 마스킹 (데이터가 0보다 큰 곳만 찾음)
+    mask = range_img > 0
+    
+    # 2. Min-Max Normalization 적용 (README 수식 구현)
+    min_val = np.min(range_img[mask])
+    max_val = np.max(range_img[mask])
+    range_img[mask] = (range_img[mask] - min_val) / (max_val - min_val + 1e-6)
+    
+    # 3. 데이터가 없는 곳(-1)은 다시 투명하게 만들거나 잘 보이게 설정 (0으로 만듦)
+    range_img[~mask] = 0
+    # -----------------------------
+    
     # display result image
     plt.subplots(1,1, figsize = (13,3) )
     plt.title("Result of Vertical FOV ({} , {}) & Horizontal FOV ({} , {})".format(fov_up, fov_down, proj_H, proj_W))
-    plt.imshow(range_img)
+    
+    # 'cmap'을 'jet'로 설정해서 무지개색으로 예쁘게 뽑아보세요!
+    plt.imshow(range_img, cmap='jet') 
     plt.axis('off')
     plt.show()
-
-    print(range_img.shape)
 
     
