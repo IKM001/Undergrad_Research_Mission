@@ -75,12 +75,25 @@ ptcloud = np.insert(points, 3, 1, axis = 1).T
 ## =================================================================
 
 ## 1. LiDAR의 PointCloud를 Camera 2 좌표계로 변환하기
+ptcloud_cam2 = C22L @ ptcloud
 
 ## 2. 카메라 좌표계에 맞게 뒤를 보는 부분 제거
+valid_mask = ptcloud_cam2[2, :] > 0
+ptcloud_cam2 = ptcloud_cam2[:, valid_mask]
+
+z = ptcloud_cam2[2, :].copy()
 
 ## 3. Normalization
+ptcloud_img = P @ ptcloud_cam2
+
+u = ptcloud_img[0, :] / ptcloud_img[2, :]
+v = ptcloud_img[1, :] / ptcloud_img[2, :]
 
 ## 4. 이미지 바깥에 있는 Point (Outlier) 제거
+img_mask = (u >= 0) & (u < w) & (v >= 0) & (v < h)
+u = u[img_mask]
+v = v[img_mask]
+z = z[img_mask]
 
 ## =================================================================
 
