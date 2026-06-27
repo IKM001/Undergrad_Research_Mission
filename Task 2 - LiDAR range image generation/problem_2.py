@@ -53,6 +53,8 @@ def pointcloud_to_range_img(current_vertex, fov_up, fov_down, proj_H, proj_W, ma
     # order in decreasing depth
     order = np.argsort(depth)[::-1]
     depth = depth[order]
+    u = u[order]
+    v = v[order]
 
     proj_range = np.full((proj_H, proj_W), -1, dtype=np.float32)  # [H,W] range (-1 is no data)
     proj_range[v, u] = depth
@@ -63,31 +65,25 @@ def pointcloud_to_range_img(current_vertex, fov_up, fov_down, proj_H, proj_W, ma
 
 
 if __name__ == "__main__":
-    # Spinning LiDAR FoV 설정 : Velodyne-HDL64e 모델 스펙 확인
     fov_up=2.0 
     fov_down=-24.9 
     proj_H=64 
     proj_W=900
 
-    # bin format -> numpy array
     lidar_points = load_from_bin('./0000000000.bin')
-    
-    # generate range image
     
     range_img = pointcloud_to_range_img(lidar_points, fov_up, fov_down, proj_H, proj_W, max_range=150)
 
-    # display result image
-    
-    plt.subplots(1,1, figsize = (13,3) )
+    # 정규화
+    valid = range_img > 0
+    range_img_vis = range_img.copy()
+    range_img_vis[valid] = (range_img[valid] - range_img[valid].min()) / \
+                           (range_img[valid].max() - range_img[valid].min())
+    range_img_vis[~valid] = 0
 
-    plt.title("Result of Vertical FOV ({} , {}) & Horizontal FOV ({} , {})".format(fov_up, fov_down, proj_H, proj_W))
-
-    plt.imshow(range_img)
-
+    plt.subplots(1, 1, figsize=(13, 3))
+    plt.title("Result of Vertical FOV (-24.9 , 2.0) & Horizontal FOV (-180 , 180)")
+    plt.imshow(range_img_vis, cmap='viridis')
     plt.axis('off')
+    plt.tight_layout()
     plt.show()
-
-
-    print(range_img.shape) 
-
-    

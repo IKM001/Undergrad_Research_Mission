@@ -108,35 +108,29 @@ v = (1.0 - (pitch + abs(fov_down)) / fov) * proj_H
   3. 상하 반전 처리: 1.0 - (비율) 연산을 적용하여, 각도가 커질수록 픽셀 인덱스는 작아지게(하단에서 상단으로 매핑) 설계하였습니다.
 
   ### 투영 결과 (Range Image)
-![LiDAR Projection Result](First.png)
+![Result of Vertical FOV](First.png)
 
 ### 만약 range에 따른 차이를 더 잘 보여주기 위해서는 어떻게 해야할까? ( Hint : normalization )
+기존 코드는 `np.clip(range_img, 0, 50) / 50.0` 방식으로 고정된 범위(0~50m)에 맞춰 스케일링하였습니다.  
+이 방식은 실제 데이터의 분포를 반영하지 못해 색상 대비가 약해지는 문제가 있습니다.
 
-### 시각화 개선: 거리 데이터 정규화 (Normalization)
+**문제점**
+- `proj_range`가 `-1`(no data)로 초기화되어 있어, `-1`까지 포함하면 정규화 범위가 왜곡됨
+- 고정 범위(0~50m) 클리핑 시 실제 데이터의 min/max를 반영하지 못해 색상 대비 손실
 
-* **문제점:** 원본 Range Image는 실제 거리 값(m)을 그대로 사용하므로, 데이터 분포에 따라 이미지가 지나치게 어둡거나 명암 대비가 낮아 객체 식별이 어렵습니다.
+**해결 방법: 유효 픽셀만 골라 min-max 정규화**
 
-* **해결 방법 (Min-Max Normalization):**
-    * 전체 유효 거리 데이터($R$)의 최솟값($R_{min}$)과 최댓값($R_{max}$)을 찾아 `0~1` 사이의 범위로 정규화하였습니다.
-    * 수식: $R_{norm} = \frac{R - R_{min}}{R_{max} - R_{min}}$
-    * **코드 구현**
 ```python
-# 1. 유효한 데이터만 필터링 (데이터가 없는 픽셀 값인 -1 제외)
-mask = range_img > 0 
-  -투영 과정에서 데이터가 없는 픽셀에는 기본값으로 -1이 할당되어 있습니다. 이 -1을 포함해서 정규화하면 전체적인 색상 범위가 왜곡되므로, 실제 거리 데이터인 0보다 큰 값들만 골라내는 필터링(Masking) 작업입니다.
-
-# 2. Min-Max 정규화 수행을 위해 데이터의 최솟값/최댓값 추출
-min_val = np.min(range_img[mask])
-max_val = np.max(range_img[mask])
-  -전체 데이터 중 가장 가까운 곳과 가장 먼 곳의 거리를 찾아, 정규화의 기준점(Scale)을 설정합니다.
-
-# 3. README에 기술한 정규화 수식 구현
-range_img[mask] = (range_img[mask] - min_val) / (max_val - min_val + 1e-6)
-  -만약 모든 거리 데이터가 동일한 값일 경우, max - min이 0이 되어 계산 오류가 발생합니다. 이를 방지하는 안전장치입니다.
-
-# 4. 데이터가 없는 곳(mask가 False인 곳)은 배경값 0으로 초기화
-range_img[~mask] = 0
-  -마스킹된 결과의 반대(~mask), 즉 데이터가 없는 빈 공간은 배경 처리를 위해 0으로 고정합니다.
+valid = range_img > 0                      # -1(no data) 픽셀 제외
+range_img_vis = range_img.copy()
+range_img_vis[valid] = (range_img[valid] - range_img[valid].min()) / \
+                       (range_img[valid].max() - range_img[valid].min())
+range_img_vis[~valid] = 0                  # no data → 0 (검정)
 ```
+
+1. `valid` 마스크로 데이터가 있는 픽셀만 선택
+2. 해당 픽셀들의 실제 min/max로 0~1 범위에 정규화
+3. no data 픽셀은 0으로 처리하여 배경과 구분
+
   ### 투영 결과 (Range Image)
-![LiDAR Projection Result](Second.png)
+![Result of Vertical FOV](Second.png)
