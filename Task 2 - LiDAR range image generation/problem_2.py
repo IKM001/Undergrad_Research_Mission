@@ -31,12 +31,12 @@ def pointcloud_to_range_img(current_vertex, fov_up, fov_down, proj_H, proj_W, ma
     ############################# Problem ##############################
     
     # 1. LiDAR 센서 좌표계를 기준으로, 모든 point의 yaw 및 pitch 각도 구하기
-    yaw = 
-    pitch = 
-    
+    yaw = -np.arctan2(scan_y, scan_x)
+    pitch = np.arcsin(scan_z / depth)
+
     # 2. 3D point를 2D 이미지 좌표계로 투영했을 때의 픽셀 위치 구하기
-    u =    
-    v =   
+    u = 0.5 * (1.0 - yaw / np.pi) * proj_W
+    v = (1.0 - (pitch + abs(fov_down)) / fov) * proj_H
     
     ####################################################################
     
