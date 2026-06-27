@@ -69,3 +69,43 @@ $$v = \left[ 1 - (\arcsin(z r^{-1}) + |f_{\text{down}}|) f^{-1} \right] h$$
 * **맨 아래를 볼 때 (Bottom Edge, $\theta = -|f_{\text{down}}|$)**
   $$v = \left[ 1 - \frac{-|f_{\text{down}}| + |f_{\text{down}}|}{f} \right] h = [1 - 0] h = h$$
   $\rightarrow$ 캔버스의 맨 아랫쪽 줄($h$번째 인덱스)에 정확히 안착
+
+### LiDAR 센서의 FoV를 안다면, 3D(x, y, z)의 pointcloud를 깊이 정보를 가진 2D range image(u, v)로 투영시킬 수 있지 않을까?
+
+- **위 수식을 활용하여 LiDAR 좌표계 기준으로, pointcloud의 yaw 와 pitch 각도 구하기**
+- **yaw 및 pitch 각도를 활용하여 모든 3D pointcloud에 대한 2D image상의 projection 좌표값 구하기**
+
+### 1. 각도 추출 (Yaw & Pitch)
+LiDAR 센서의 3D 좌표 $(x, y, z)$를 활용해 각 포인트의 수평/수직 각도를 계산합니다.
+
+```python
+yaw = -np.arctan2(scan_y, scan_x)
+pitch = np.arcsin(scan_z / depth)
+```
+* **yaw (방위각): * 역할: $xy$ 평면상의 수평 회전각.**
+  - 구현 논리: np.arctan2(y, x)로 산출된 값에 마이너스(-) 부호를 적용하였습니다. 센서의 회전 방향과 이미지 가로 인덱스 증가 방향을 동기화하여 좌우 반전 없이 투영하기 위함입니다.
+
+* **pitch (고각): * 역할: 센서 수평선 기준의 수직 고각.**
+  - 구현 논리: 높이(scan_z)와 거리(depth)를 사용하여 삼각함수 arcsin으로 산출합니다. 이는 3D상의 높이 정보를 2D 이미지의 세로축 정보로 변환하는 기초 데이터가 됩니다.
+
+### 2. 픽셀 좌표 맵핑: u & v
+추출한 각도 변수를 실제 이미지의 픽셀 인덱스로 변환합니다.
+
+```python
+u = 0.5 * (1.0 - yaw / np.pi) * proj_W
+v = (1.0 - (pitch + abs(fov_down)) / fov) * proj_H
+```
+
+* **u (가로 픽셀 좌표):**
+  -역할: $360^\circ$ 회전하는 수평 시야를 가로 이미지 해상도(proj_W)에 대응.
+  -도출 과정: yaw / np.pi로 $-\pi \sim \pi$ 각도를 $-1 \sim 1$ 비율로 정규화하고, 이를 다시 $0 \sim 1$ 범위로 이동시킨 후 전체 가로 해상도를 곱해 최종 픽셀 위치를 확정합니다.
+
+* **v (세로 픽셀 좌표):**
+  -역할: 센서의 수직 시야각을 세로 이미지 해상도(proj_H)에 대응.
+  -도출 과정 (비대칭 FOV 보정): 
+  1. 오프셋 보정: 기존 수식의 fov_up 대신 하단 시야각인 abs(fov_down)을 더하여 전체 수직 시야 범위를 0점에서부터 정렬시켰습니다.
+  2. 영점 매칭: 가장 아래를 보는 레이저가 v = proj_H (이미지 최하단), 가장 위를 보는 레이저가 v = 0 (이미지 최상단)에 오도록 (pitch + abs(fov_down)) / fov를 통해 각도 데이터를 픽셀 비율로 환산합니다.
+  3. 상하 반전 처리: 1.0 - (비율) 연산을 적용하여, 각도가 커질수록 픽셀 인덱스는 작아지게(하단에서 상단으로 매핑) 설계하였습니다.
+
+  ### 투영 결과 (Range Image)
+![LiDAR Projection Result](First.png)
